@@ -1,33 +1,54 @@
 import litellm
-from litellm import completion as litellm_completion, get_supported_openai_params, supports_response_schema
+from litellm import completion as litellm_completion
 from config import Config
-from typing import Optional, Union, Type
-from pydantic import BaseModel
+import json
+from typing import Optional, Dict, Any, List
 
 def completion(
-    messages: list, 
+    messages: list,
     model: str = Config.LLM,
-    response_format: Optional[Union[dict, Type[BaseModel]]] = None,
-    enable_json_validation: bool = False
-):
-    # Always enable JSON schema validation
-    litellm.enable_json_schema_validation = True
-    
-    # Check if model supports JSON response format
-    supported_params = get_supported_openai_params(model)
-    if response_format and "response_format" not in supported_params:
-        raise ValueError(f"Model {model} does not support response_format parameter")
-    
-    # Check if model supports JSON schema
-    if not supports_response_schema(model):
-        raise ValueError(f"Model {model} does not support JSON schema validation")
+    tools: Optional[List[Dict[str, Any]]] = None,
+    tool_choice: str = "auto"
+) -> str:
+    """
+    Make a completion call to the LLM.
+    If tools are provided, the model may choose to call them.
+    """
+    if tools and not litellm.supports_function_calling(model):
+        raise ValueError(f"Model {model} does not support function calling")
 
     response = litellm_completion(
-        messages=messages, 
+        messages=messages,
         model=model,
-        response_format=response_format  # Pass Pydantic model directly
+        tools=tools,
+        tool_choice=tool_choice
     )
-    return response['choices'][0]['message']['content']
+    
+    return response
+
+def execute_tool_calls(
+    tool_calls: List[Any],
+    available_functions: Dict[str, callable],
+    messages: List[Dict[str, str]]
+) -> List[Dict[str, str]]:
+    """
+    Execute tool calls and append results to messages.
+    Returns updated messages list.
+    """
+    for tool_call in tool_calls:
+        function_name = tool_call.function.name
+        function_to_call = available_functions[function_name]
+        function_args = json.loads(tool_call.function.arguments)
+        function_response = function_to_call(**function_args)
+        
+        messages.append({
+            "tool_call_id": tool_call.id,
+            "role": "tool",
+            "name": function_name,
+            "content": function_response
+        })
+    
+    return messages
 
 # Example usage:
 """

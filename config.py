@@ -14,3 +14,4 @@ class Config:
 
     # LLM config
     LLM = "anthropic/claude-3-5-sonnet-20240620"
+    # LLM = "groq/llama-3.1-70b-versatile"
