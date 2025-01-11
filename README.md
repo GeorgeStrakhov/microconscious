@@ -5,7 +5,7 @@ The idea is simple: single LLM call represents a single thought. But consciousne
 
 ## Core Concepts
 
-Our microconscious digital organism (MiDO) has:
+Our microconscious iterative digital organism (MIDO) has:
 
 - **Identity**: Name, goal, and personality traits defined in YAML
 - **State**: Current focus, emotional state, energy level, and context
@@ -28,7 +28,7 @@ The memory system uses two complementary storage mechanisms:
   - Conversation tracking
 
 ### Interaction Loop
-1. Load MiDO configuration and initialize systems
+1. Load MIDO configuration and initialize systems
 2. Process current state and relevant memories
 3. Generate action based on context (currently speaking)
 4. Get user input
